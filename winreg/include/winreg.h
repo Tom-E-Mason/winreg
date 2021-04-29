@@ -64,12 +64,14 @@ namespace winreg
                     auto ec{ std::error_code(ls, std::system_category()) };
                     throw std::system_error(ec, "RegCloseKey() failed");
                 }
+
+                m_key = nullptr;
             }
         }
 
         const HKEY& get() const noexcept { return m_key; }
 
-        bool is_valid() const noexcept { return m_key; }
+        bool is_open() const noexcept { return m_key; }
         operator bool() const noexcept { return m_key; }
 
     private:
