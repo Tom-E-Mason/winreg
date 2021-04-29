@@ -66,6 +66,8 @@ namespace winreg
             }
         }
 
+        const HKEY& get() const noexcept { return m_key; }
+
         bool is_valid() const noexcept { return m_key; }
         operator bool() const noexcept { return m_key; }
 
