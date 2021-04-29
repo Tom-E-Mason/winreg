@@ -74,4 +74,10 @@ namespace winreg
     private:
         HKEY m_key;
     };
+
+    key classes_root(HKEY_CLASSES_ROOT);
+    key current_user(HKEY_CURRENT_USER);
+    key local_machine(HKEY_LOCAL_MACHINE);
+    key users(HKEY_USERS);
+    key current_config(HKEY_CURRENT_CONFIG);
 }
