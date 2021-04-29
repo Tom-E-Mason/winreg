@@ -17,6 +17,7 @@ namespace winreg
         execute = KEY_EXECUTE,
         notify = KEY_NOTIFY,
         query_value = KEY_QUERY_VALUE,
+        read = KEY_READ,
         set_value = KEY_SET_VALUE,
         wow64_32key = KEY_WOW64_32KEY,
         wow64_64key = KEY_WOW64_64KEY,
