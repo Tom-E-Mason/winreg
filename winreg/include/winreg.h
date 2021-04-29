@@ -30,13 +30,14 @@ namespace winreg
         key(HKEY hkey) : m_key(hkey) {}
 
         key(const key&) = delete;
+        key(key&& rhs) : m_key(rhs.m_key) { rhs.m_key = nullptr; }
 
         ~key() 
         {
             close();
         }
 
-        key open(const std::wstring& subkey, access required_access)
+        key open(const std::wstring& subkey, access required_access = access::read)
         {
             if (subkey.empty())
                 throw std::invalid_argument("subkey may not be empty string");
@@ -120,7 +121,49 @@ namespace winreg
             return key_info;
         }
 
+        template<typename Func>
+        void enumerate(Func&& func, access required_access = access::read)
+        {
+            auto n_subkeys{ DWORD{} };
+            auto max_subkey_name_len{ DWORD{} };
 
+            auto ls{ RegQueryInfoKey(
+                m_key,
+                nullptr,
+                nullptr,
+                nullptr,
+                &n_subkeys,
+                &max_subkey_name_len,
+                nullptr,
+                nullptr,
+                nullptr,
+                nullptr,
+                nullptr,
+                nullptr
+            ) };
+
+            ++max_subkey_name_len; // plus 1 for '\0'
+
+            auto name_buf{ std::wstring(max_subkey_name_len, '\0') };
+
+            for (auto i{ DWORD{0} }; i < n_subkeys; ++i)
+            {
+                auto subkey_name_len{ max_subkey_name_len }; // in-out param
+
+                auto ls{ RegEnumKeyEx(
+                    m_key,
+                    i,
+                    name_buf.data(),
+                    &subkey_name_len,
+                    nullptr,
+                    nullptr,
+                    nullptr,
+                    nullptr
+                ) };
+
+                func(std::move(open(name_buf.c_str(), required_access)));
+            }
+        }
 
         const HKEY& get() const noexcept { return m_key; }
 
