@@ -26,14 +26,16 @@ namespace winreg
     class key
     {
     public:
-        key(HKEY key) : m_key(key) {}
+        key(HKEY hkey) : m_key(hkey) {}
+
+        key(const key&) = delete;
 
         ~key() 
         {
             close();
         }
 
-        void open(const std::wstring& subkey, access required_access)
+        key open(const std::wstring& subkey, access required_access)
         {
             if (subkey.empty())
                 throw std::invalid_argument("subkey may not be empty string");
@@ -48,6 +50,7 @@ namespace winreg
                 throw std::system_error(ec, "RegOpenKeyEx() failed");
             }
 
+            return key(result);
         }
 
         void close()
