@@ -114,6 +114,8 @@ namespace winreg
                     throw std::system_error(ec, "RegQueryInfoKey() failed");
                 }
             }
+            else
+                key_info.class_name.resize(key_info.class_name.find(L'\0'));
             
             return key_info;
         }
