@@ -8,9 +8,15 @@
 
 namespace winreg
 {
+#if UNICODE
     using string = std::wstring;
     using char_t = wchar_t;
-    constexpr char_t null_c{ L'0' };
+    constexpr char_t null_char{ L'\0' };
+#else
+    using string = std::string;
+    using char_t = char;
+    constexpr char_t null_char{ '\0' };
+#endif
 
     enum class access : REGSAM
     {
@@ -41,7 +47,7 @@ namespace winreg
             close();
         }
 
-        auto open(const std::wstring& subkey, access required_access = access::read) -> key
+        auto open(const string& subkey, access required_access = access::read) -> key
         {
             if (subkey.empty())
                 throw std::invalid_argument("subkey may not be empty string");
@@ -76,7 +82,7 @@ namespace winreg
 
         struct info
         {
-            std::wstring class_name;
+            string class_name;
             DWORD n_subkeys;
             DWORD max_subkey_name_len;
             DWORD max_class_len;
@@ -90,7 +96,7 @@ namespace winreg
         auto query_info(DWORD class_name_buffer_size = 16) -> info
         {
             auto key_info{ info{} };
-            key_info.class_name.resize(class_name_buffer_size, '\0');
+            key_info.class_name.resize(class_name_buffer_size, null_char);
 
             auto ls{ RegQueryInfoKey(
                 m_key,
@@ -120,17 +126,17 @@ namespace winreg
                 }
             }
             else
-                key_info.class_name.resize(key_info.class_name.find(L'\0'));
+                key_info.class_name.resize(key_info.class_name.find(null_char));
 
             return key_info;
         }
 
-        auto get_string(const std::wstring& name)->std::wstring
+        auto get_string(const string& name)->string
         {
             return get_string(name.c_str());
         }
 
-        auto get_string(const wchar_t* name) -> std::wstring
+        auto get_string(const char_t* name) -> string
         {
             auto size{ DWORD{} };
             auto type{ DWORD{} };
@@ -143,11 +149,11 @@ namespace winreg
                 throw std::system_error(ec, "RegQueryValueEx() failed");
             }
 
-            auto value{ std::wstring{} };
+            auto value{ string{} };
 
             if (size)
             {
-                value.resize(size / sizeof(std::wstring::value_type), L'\0');
+                value.resize(size / sizeof(string::value_type), null_char);
 
                 ls = RegGetValue(m_key, nullptr, name, type_restrictions, &type, value.data(), &size);
                 if (ls != ERROR_SUCCESS)
@@ -156,7 +162,7 @@ namespace winreg
                     throw std::system_error{ ec, "RegGetValue() failed" };
                 }
 
-                value.resize(value.find(L'\0'));
+                value.resize(value.find(null_char));
             }
             
 
@@ -192,7 +198,7 @@ namespace winreg
 
             ++max_subkey_name_len; // plus 1 for '\0'
 
-            auto name_buf{ std::wstring(max_subkey_name_len, '\0') };
+            auto name_buf{ string(max_subkey_name_len, '\0') };
 
             for (auto i{ DWORD{0} }; i < n_subkeys; ++i)
             {
