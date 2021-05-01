@@ -121,6 +121,39 @@ namespace winreg
             return key_info;
         }
 
+        auto get_string(const std::wstring& name) -> std::wstring
+        {
+            auto size{ DWORD{} };
+            auto type{ DWORD{} };
+            constexpr auto type_restrictions{ DWORD{ RRF_RT_REG_SZ | RRF_RT_REG_EXPAND_SZ | RRF_NOEXPAND } };
+
+            auto ls{ RegGetValue(m_key, nullptr, name.c_str(), type_restrictions, &type, nullptr, &size) };
+            if (ls != ERROR_SUCCESS)
+            {
+                auto ec{ std::error_code(ls, std::system_category()) };
+                throw std::system_error(ec, "RegQueryValueEx() failed");
+            }
+
+            auto value{ std::wstring{} };
+
+            if (size)
+            {
+                value.resize(size / sizeof(std::wstring::value_type), L'\0');
+
+                ls = RegGetValue(m_key, nullptr, name.c_str(), type_restrictions, &type, value.data(), &size);
+                if (ls != ERROR_SUCCESS)
+                {
+                    auto ec{ std::error_code{ ls, std::system_category() } };
+                    throw std::system_error{ ec, "RegGetValue() failed" };
+                }
+
+                value.resize(value.find(L'\0'));
+            }
+            
+
+            return value;
+        }
+
         template<typename Func>
         void enumerate(Func&& func)
         {
