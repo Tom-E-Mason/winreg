@@ -37,7 +37,7 @@ namespace winreg
             close();
         }
 
-        key open(const std::wstring& subkey, access required_access = access::read)
+        auto open(const std::wstring& subkey, access required_access = access::read) -> key
         {
             if (subkey.empty())
                 throw std::invalid_argument("subkey may not be empty string");
@@ -52,10 +52,10 @@ namespace winreg
                 throw std::system_error(ec, "RegOpenKeyEx() failed");
             }
 
-            return key(result);
+            return { result };
         }
 
-        void close()
+        auto close() -> void
         {
             if (m_key)
             {
@@ -83,7 +83,7 @@ namespace winreg
             PFILETIME last_write_time;
         };
 
-        info query_info(DWORD class_name_buffer_size = 16)
+        auto query_info(DWORD class_name_buffer_size = 16) -> info
         {
             auto key_info{ info{} };
             key_info.class_name.resize(class_name_buffer_size, '\0');
@@ -155,7 +155,7 @@ namespace winreg
         }
 
         template<typename Func>
-        void enumerate(Func&& func)
+        auto enumerate(Func&& func) -> void
         {
             auto n_subkeys{ DWORD{} };
             auto max_subkey_name_len{ DWORD{} };
@@ -205,9 +205,9 @@ namespace winreg
             }
         }
 
-        const HKEY& get() const noexcept { return m_key; }
+        auto get() const noexcept -> const HKEY& { return m_key; }
 
-        bool is_open() const noexcept { return m_key; }
+        auto is_open() const noexcept -> bool { return m_key; }
         operator bool() const noexcept { return m_key; }
 
     private:
