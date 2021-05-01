@@ -117,12 +117,12 @@ namespace winreg
             }
             else
                 key_info.class_name.resize(key_info.class_name.find(L'\0'));
-            
+
             return key_info;
         }
 
         template<typename Func>
-        void enumerate(Func&& func, access required_access = access::read)
+        void enumerate(Func&& func)
         {
             auto n_subkeys{ DWORD{} };
             auto max_subkey_name_len{ DWORD{} };
@@ -141,6 +141,12 @@ namespace winreg
                 nullptr,
                 nullptr
             ) };
+
+            if (ls != ERROR_SUCCESS)
+            {
+                auto ec{ std::error_code{ ls, std::system_category() } };
+                throw std::system_error{ ec, "RegQueryInfoKey() failed in for_each()" };
+            }
 
             ++max_subkey_name_len; // plus 1 for '\0'
 
@@ -161,7 +167,8 @@ namespace winreg
                     nullptr
                 ) };
 
-                func(std::move(open(name_buf.c_str(), required_access)));
+                if (!func(name_buf.c_str()))
+                    break;
             }
         }
 
