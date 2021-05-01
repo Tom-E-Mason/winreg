@@ -25,7 +25,7 @@ TEST(winreg_test, openclose)
     EXPECT_TRUE(info.last_write_time == 0);
 
     auto count{ info.n_subkeys };
-    hkey.enumerate([&count](winreg::key&& subkey) { --count; });
+    hkey.enumerate([&count](std::wstring subkey) { --count; return true; });
 
     EXPECT_TRUE(count == 0);
 
