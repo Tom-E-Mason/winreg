@@ -8,6 +8,10 @@
 
 namespace winreg
 {
+    using string = std::wstring;
+    using char_t = wchar_t;
+    constexpr char_t null_c{ L'0' };
+
     enum class access : REGSAM
     {
         all_access = KEY_ALL_ACCESS,
@@ -121,13 +125,18 @@ namespace winreg
             return key_info;
         }
 
-        auto get_string(const std::wstring& name) -> std::wstring
+        auto get_string(const std::wstring& name)->std::wstring
+        {
+            return get_string(name.c_str());
+        }
+
+        auto get_string(const wchar_t* name) -> std::wstring
         {
             auto size{ DWORD{} };
             auto type{ DWORD{} };
             constexpr auto type_restrictions{ DWORD{ RRF_RT_REG_SZ | RRF_RT_REG_EXPAND_SZ | RRF_NOEXPAND } };
 
-            auto ls{ RegGetValue(m_key, nullptr, name.c_str(), type_restrictions, &type, nullptr, &size) };
+            auto ls{ RegGetValue(m_key, nullptr, name, type_restrictions, &type, nullptr, &size) };
             if (ls != ERROR_SUCCESS)
             {
                 auto ec{ std::error_code(ls, std::system_category()) };
@@ -140,7 +149,7 @@ namespace winreg
             {
                 value.resize(size / sizeof(std::wstring::value_type), L'\0');
 
-                ls = RegGetValue(m_key, nullptr, name.c_str(), type_restrictions, &type, value.data(), &size);
+                ls = RegGetValue(m_key, nullptr, name, type_restrictions, &type, value.data(), &size);
                 if (ls != ERROR_SUCCESS)
                 {
                     auto ec{ std::error_code{ ls, std::system_category() } };
