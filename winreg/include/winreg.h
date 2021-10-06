@@ -47,6 +47,30 @@ namespace winreg
             close();
         }
 
+        auto create_subkey(const string& subkey) const -> key
+        {
+            HKEY new_key{};
+
+            auto ls = RegCreateKey(m_key, subkey.c_str(), &new_key);
+            if (ls != ERROR_SUCCESS)
+            {
+                auto ec = std::error_code(ls, std::system_category());
+                throw std::system_error(ec, "RegCreateKey() failed");
+            }
+
+            return key(new_key);
+        }
+
+        void delete_subkey(const string& subkey) const
+        {
+            auto ls = RegDeleteKey(m_key, subkey.c_str());
+            if (ls != ERROR_SUCCESS)
+            {
+                auto ec = std::error_code(ls, std::system_category());
+                throw std::system_error(ec, "RegDeleteKey() failed");
+            }
+        }
+
         auto open(const string& subkey, access required_access = access::read) const -> key
         {
             HKEY result{};
@@ -128,7 +152,7 @@ namespace winreg
             return key_info;
         }
 
-        auto get_string(const string& name)-> string
+        auto get_string(const string& name) -> string
         {
             return get_string(name.c_str());
         }
@@ -162,7 +186,6 @@ namespace winreg
                 value.resize(value.find(null_char));
             }
             
-
             return value;
         }
 

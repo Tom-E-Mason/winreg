@@ -89,3 +89,29 @@ TEST(winreg_test, get_string)
 
     EXPECT_TRUE(a_string == winreg::string(STR("C:\\Windows\\Microsoft.NET\\Framework\\")));
 }
+
+TEST(winreg_test, create_delete)
+{
+    const auto new_key_name = winreg::string(STR("long_and_unique_name_for_new_key"));
+
+    auto new_key = winreg::current_user.create_subkey(new_key_name);
+
+    auto new_key_copy = winreg::current_user.open(new_key_name);
+    
+    EXPECT_EQ(new_key, new_key_copy);
+
+    winreg::current_user.delete_subkey(new_key_name);
+
+    bool threw = false;
+    try
+    {
+        auto nonexistent_key = winreg::current_user.open(new_key_name);
+    }
+    catch (std::system_error& e)
+    {
+        threw = true;
+        EXPECT_EQ(std::string("RegQueryInfoKey() failed: "), std::string(e.what()));
+    }
+
+    EXPECT_TRUE(threw);
+}
