@@ -37,14 +37,14 @@ TEST(winreg_test, enums_and_constants)
 
 TEST(winreg_test, openclose)
 {
-    auto path{ STR("software\\asio") };
+    auto path = STR("software\\asio");
     auto subkey{ winreg::local_machine.open(path, winreg::access::read) };
 
     EXPECT_TRUE(subkey);
     EXPECT_TRUE(subkey.is_open());
 
-    auto info{ subkey.query_info() };
-    EXPECT_TRUE(info.class_name == winreg::string{ STR("") });
+    auto info = subkey.query_info();
+    EXPECT_TRUE(info.class_name == winreg::string(STR("")));
     EXPECT_TRUE(info.n_subkeys == 12);
     EXPECT_TRUE(info.max_subkey_name_len == 28);
     EXPECT_TRUE(info.max_class_len == 0);
@@ -54,7 +54,7 @@ TEST(winreg_test, openclose)
     EXPECT_TRUE(info.security_desc_size == 224);
     EXPECT_TRUE(info.last_write_time == 0);
 
-    auto count{ info.n_subkeys };
+    auto count = info.n_subkeys;
     subkey.for_each([&count](winreg::string subkey) { --count; return true; });
 
     EXPECT_TRUE(count == 0);
@@ -67,26 +67,25 @@ TEST(winreg_test, openclose)
 
 TEST(winreg_test, get_string)
 {
-    auto path{ STR("software\\microsoft") };
-    auto subkey{ winreg::local_machine.open(path, winreg::access::read) };
+    auto path = STR("software\\microsoft");
+    auto subkey = winreg::local_machine.open(path, winreg::access::read);
 
-    auto dotnet{ subkey.open(STR(".netframework"), winreg::access::read) };
+    auto dotnet = subkey.open(STR(".netframework"), winreg::access::read);
 
-    bool threw{ false };
+    auto threw = false;
     try
     {
-        auto not_a_string{ dotnet.get_string(STR("dbgjitdebuglaunchsetting")) };
+        auto not_a_string = dotnet.get_string(STR("dbgjitdebuglaunchsetting"));
     }
     catch (std::system_error& e)
     {
-        if (e.code() == std::error_code{ ERROR_UNSUPPORTED_TYPE, std::system_category() })
+        if (e.code() == std::error_code(ERROR_UNSUPPORTED_TYPE, std::system_category()))
             threw = true;
     }
 
     EXPECT_TRUE(threw);
 
-    auto a_string{ dotnet.get_string(STR("installroot")) };
+    auto a_string = dotnet.get_string(STR("installroot"));
 
     EXPECT_TRUE(a_string == winreg::string(STR("C:\\Windows\\Microsoft.NET\\Framework\\")));
-
 }
