@@ -37,7 +37,7 @@ namespace winreg
     class key
     {
     public:
-        key(HKEY hkey) : m_key(hkey) {}
+        explicit key(HKEY hkey) : m_key(hkey) {}
 
         key(const key&) = delete;
         key(key&& rhs) noexcept : m_key(rhs.m_key) { rhs.m_key = nullptr; }
@@ -59,7 +59,7 @@ namespace winreg
                 throw std::system_error(ec, "RegOpenKeyEx() failed");
             }
 
-            return result;
+            return key(result);
         }
 
         auto close() -> void
