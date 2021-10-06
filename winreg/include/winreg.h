@@ -86,7 +86,7 @@ namespace winreg
             return key(result);
         }
 
-        auto close() -> void
+        void close()
         {
             if (m_key)
             {
@@ -101,7 +101,7 @@ namespace winreg
             }
         }
 
-        struct info
+        struct query_info_t
         {
             string class_name;
             DWORD n_subkeys;
@@ -114,12 +114,12 @@ namespace winreg
             PFILETIME last_write_time;
         };
 
-        auto query_info(DWORD class_name_buffer_size = 16) -> info
+        auto query_info(DWORD class_name_buffer_size = 16) -> query_info_t
         {
-            info key_info{};
+            query_info_t key_info{};
             key_info.class_name.resize(class_name_buffer_size, null_char);
 
-            auto ls{ RegQueryInfoKey(
+            auto ls = RegQueryInfoKey(
                 m_key,
                 key_info.class_name.data(),
                 &class_name_buffer_size,
@@ -132,7 +132,7 @@ namespace winreg
                 &key_info.max_value_size,
                 &key_info.security_desc_size,
                 key_info.last_write_time
-            ) };
+            );
 
             if (ls != ERROR_SUCCESS)
             {
@@ -190,7 +190,7 @@ namespace winreg
         }
 
         template<typename Func>
-        auto for_each(Func&& func) -> void
+        void for_each(Func&& func)
         {
             DWORD n_subkeys{};
             DWORD max_subkey_name_len{};
@@ -235,7 +235,7 @@ namespace winreg
                     nullptr
                 ) };
 
-                if (!std::forward<Func>(func(name_buf.c_str())))
+                if (!std::forward<Func>(func)(name_buf.c_str()))
                     break;
             }
         }
