@@ -40,9 +40,9 @@ namespace winreg
         key(HKEY hkey) : m_key(hkey) {}
 
         key(const key&) = delete;
-        key(key&& rhs) noexcept : m_key(rhs.m_key)  { rhs.m_key = nullptr; }
+        key(key&& rhs) noexcept : m_key(rhs.m_key) { rhs.m_key = nullptr; }
 
-        ~key() 
+        ~key()
         {
             close();
         }
@@ -59,17 +59,17 @@ namespace winreg
                 throw std::system_error(ec, "RegOpenKeyEx() failed");
             }
 
-            return { result };
+            return result;
         }
 
         auto close() -> void
         {
             if (m_key)
             {
-                auto ls{ RegCloseKey(m_key) };
+                auto ls = RegCloseKey(m_key);
                 if (ls != ERROR_SUCCESS)
                 {
-                    auto ec{ std::error_code(ls, std::system_category()) };
+                    auto ec = std::error_code(ls, std::system_category());
                     throw std::system_error(ec, "RegCloseKey() failed");
                 }
 
@@ -92,7 +92,7 @@ namespace winreg
 
         auto query_info(DWORD class_name_buffer_size = 16) -> info
         {
-            auto key_info{ info{} };
+            info key_info{};
             key_info.class_name.resize(class_name_buffer_size, null_char);
 
             auto ls{ RegQueryInfoKey(
@@ -118,7 +118,7 @@ namespace winreg
                 }
                 else
                 {
-                    auto ec{ std::error_code(ls, std::system_category()) };
+                    auto ec = std::error_code(ls, std::system_category());
                     throw std::system_error(ec, "RegQueryInfoKey() failed");
                 }
             }
@@ -135,28 +135,28 @@ namespace winreg
 
         auto get_string(const char_t* name) -> string
         {
-            auto size{ DWORD{} };
-            auto type{ DWORD{} };
-            constexpr auto type_restrictions{ DWORD{ RRF_RT_REG_SZ | RRF_RT_REG_EXPAND_SZ | RRF_NOEXPAND } };
+            DWORD size{};
+            DWORD type{};
+            constexpr DWORD type_restrictions{ RRF_RT_REG_SZ | RRF_RT_REG_EXPAND_SZ | RRF_NOEXPAND };
 
             auto ls{ RegGetValue(m_key, nullptr, name, type_restrictions, &type, nullptr, &size) };
             if (ls != ERROR_SUCCESS)
             {
-                auto ec{ std::error_code(ls, std::system_category()) };
+                auto ec = std::error_code(ls, std::system_category());
                 throw std::system_error(ec, "RegQueryValueEx() failed");
             }
 
-            auto value{ string{} };
+            string value;
 
             if (size)
             {
-                value.resize(size / sizeof(string::value_type), null_char);
+                value.resize(size / sizeof(char_t), null_char);
 
                 ls = RegGetValue(m_key, nullptr, name, type_restrictions, &type, value.data(), &size);
                 if (ls != ERROR_SUCCESS)
                 {
-                    auto ec{ std::error_code{ ls, std::system_category() } };
-                    throw std::system_error{ ec, "RegGetValue() failed" };
+                    auto ec = std::error_code(ls, std::system_category());
+                    throw std::system_error(ec, "RegGetValue() failed");
                 }
 
                 value.resize(value.find(null_char));
@@ -169,10 +169,10 @@ namespace winreg
         template<typename Func>
         auto for_each(Func&& func) -> void
         {
-            auto n_subkeys{ DWORD{} };
-            auto max_subkey_name_len{ DWORD{} };
+            DWORD n_subkeys{};
+            DWORD max_subkey_name_len{};
 
-            auto ls{ RegQueryInfoKey(
+            auto ls = RegQueryInfoKey(
                 m_key,
                 nullptr,
                 nullptr,
@@ -185,21 +185,21 @@ namespace winreg
                 nullptr,
                 nullptr,
                 nullptr
-            ) };
+            );
 
             if (ls != ERROR_SUCCESS)
             {
-                auto ec{ std::error_code{ ls, std::system_category() } };
-                throw std::system_error{ ec, "RegQueryInfoKey() failed in for_each()" };
+                auto ec = std::error_code(ls, std::system_category());
+                throw std::system_error(ec, "RegQueryInfoKey() failed in for_each()");
             }
 
             ++max_subkey_name_len; // plus 1 for '\0'
 
-            auto name_buf{ string(max_subkey_name_len, '\0') };
+            auto name_buf = string(max_subkey_name_len, null_char);
 
-            for (auto i{ DWORD{0} }; i < n_subkeys; ++i)
+            for (DWORD i = 0; i < n_subkeys; ++i)
             {
-                auto subkey_name_len{ max_subkey_name_len }; // in-out param
+                auto subkey_name_len = max_subkey_name_len; // in-out param
 
                 auto ls{ RegEnumKeyEx(
                     m_key,
