@@ -40,7 +40,7 @@ namespace winreg
         key(HKEY hkey) : m_key(hkey) {}
 
         key(const key&) = delete;
-        key(key&& rhs) : m_key(rhs.m_key) { rhs.m_key = nullptr; }
+        key(key&& rhs) noexcept : m_key(rhs.m_key)  { rhs.m_key = nullptr; }
 
         ~key() 
         {
