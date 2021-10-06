@@ -189,6 +189,68 @@ namespace winreg
             return value;
         }
 
+        void set_dword(const string& name, DWORD value) const
+        {
+            set_dword(name.c_str(), value);
+        }
+
+        void set_dword(const char_t* name, DWORD value) const
+        {
+            const auto ls = RegSetValueEx(m_key,
+                                          name,
+                                          0,
+                                          REG_DWORD,
+                                          reinterpret_cast<const BYTE*>(&value),
+                                          sizeof(DWORD));
+
+            if (ls != ERROR_SUCCESS)
+            {
+                auto ec = std::error_code(ls, std::system_category());
+                throw std::system_error(ec, "RegSetValueEx() failed");
+            }
+        }
+
+        auto get_dword(const string& name) const -> DWORD
+        {
+            return get_dword(name.c_str());
+        }
+
+        auto get_dword(const char_t* name) const -> DWORD
+        {
+            DWORD value{};
+            DWORD size = sizeof(DWORD);
+            const auto ls = RegGetValue(m_key,
+                                        nullptr,
+                                        name,
+                                        RRF_RT_REG_DWORD,
+                                        nullptr,
+                                        &value,
+                                        &size);
+
+            if (ls != ERROR_SUCCESS)
+            {
+                auto ec = std::error_code(ls, std::system_category());
+                throw std::system_error(ec, "RegGetValue() failed");
+            }
+
+            return value;
+        }
+
+        void delete_value(const string& name) const
+        {
+            delete_value(name.c_str());
+        }
+
+        void delete_value(const char_t* name) const
+        {
+            auto ls = RegDeleteValue(m_key, name);
+            if (ls != ERROR_SUCCESS)
+            {
+                auto ec = std::error_code(ls, std::system_category());
+                throw std::system_error(ec, "RegDeleteValue() failed");
+            }
+        }
+
         // TODO: make work for different types of callables, taking
         // keys, key names, names and values, just values etc.
         template<typename Func>

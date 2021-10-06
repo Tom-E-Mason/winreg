@@ -90,8 +90,9 @@ TEST(winreg_test, get_string)
     EXPECT_TRUE(a_string == winreg::string(STR("C:\\Windows\\Microsoft.NET\\Framework\\")));
 }
 
-TEST(winreg_test, create_delete)
+TEST(winreg_test, create_write_read_delete)
 {
+    // create
     const auto new_key_name = winreg::string(STR("long_and_unique_name_for_new_key"));
 
     auto new_key = winreg::current_user.create_subkey(new_key_name);
@@ -99,6 +100,15 @@ TEST(winreg_test, create_delete)
     auto new_key_copy = winreg::current_user.open(new_key_name);
     
     EXPECT_EQ(new_key, new_key_copy);
+
+    // write
+    new_key.set_dword(winreg::string(STR("dword-value")), 42);
+
+    // read
+    EXPECT_EQ(new_key.get_dword(winreg::string(STR("dword-value"))), 42);
+
+    // delete
+    new_key.delete_value(winreg::string(STR("dword-value")));
 
     winreg::current_user.delete_subkey(new_key_name);
 
@@ -110,7 +120,7 @@ TEST(winreg_test, create_delete)
     catch (std::system_error& e)
     {
         threw = true;
-        EXPECT_EQ(std::string("RegQueryInfoKey() failed: "), std::string(e.what()));
+        EXPECT_EQ(std::string("RegOpenKeyEx() failed: The system cannot find the file specified."), std::string(e.what()));
     }
 
     EXPECT_TRUE(threw);
