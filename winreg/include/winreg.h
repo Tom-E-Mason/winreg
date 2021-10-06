@@ -131,7 +131,7 @@ namespace winreg
             return key_info;
         }
 
-        auto get_string(const string& name)->string
+        auto get_string(const string& name)-> string
         {
             return get_string(name.c_str());
         }
