@@ -189,6 +189,8 @@ namespace winreg
             return value;
         }
 
+        // TODO: make work for different types of callables, taking
+        // keys, key names, names and values, just values etc.
         template<typename Func>
         void for_each(Func&& func)
         {
