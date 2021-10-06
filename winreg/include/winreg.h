@@ -49,9 +49,6 @@ namespace winreg
 
         auto open(const string& subkey, access required_access = access::read) const -> key
         {
-            if (subkey.empty())
-                throw std::invalid_argument("subkey may not be empty string");
-
             HKEY result{};
             DWORD options{};
 
@@ -170,7 +167,7 @@ namespace winreg
         }
 
         template<typename Func>
-        auto enumerate(Func&& func) -> void
+        auto for_each(Func&& func) -> void
         {
             auto n_subkeys{ DWORD{} };
             auto max_subkey_name_len{ DWORD{} };
