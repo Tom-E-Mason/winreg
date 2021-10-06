@@ -235,7 +235,7 @@ namespace winreg
                     nullptr
                 ) };
 
-                if (!func(name_buf.c_str()))
+                if (!std::forward<Func>(func(name_buf.c_str())))
                     break;
             }
         }
