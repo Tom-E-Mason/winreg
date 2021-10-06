@@ -47,7 +47,7 @@ namespace winreg
             close();
         }
 
-        auto open(const string& subkey, access required_access = access::read) -> key
+        auto open(const string& subkey, access required_access = access::read) const -> key
         {
             if (subkey.empty())
                 throw std::invalid_argument("subkey may not be empty string");
@@ -229,9 +229,9 @@ namespace winreg
         HKEY m_key;
     };
 
-    key classes_root(HKEY_CLASSES_ROOT);
-    key current_user(HKEY_CURRENT_USER);
-    key local_machine(HKEY_LOCAL_MACHINE);
-    key users(HKEY_USERS);
-    key current_config(HKEY_CURRENT_CONFIG);
+    extern const key classes_root(HKEY_CLASSES_ROOT);
+    extern const key current_user(HKEY_CURRENT_USER);
+    extern const key local_machine(HKEY_LOCAL_MACHINE);
+    extern const key users(HKEY_USERS);
+    extern const key current_config(HKEY_CURRENT_CONFIG);
 }
