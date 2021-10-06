@@ -240,7 +240,7 @@ namespace winreg
             }
         }
 
-        auto get() const noexcept -> const HKEY& { return m_key; }
+        auto get() const noexcept -> HKEY { return m_key; }
 
         auto is_open() const noexcept -> bool { return m_key; }
         operator bool() const noexcept { return m_key; }
