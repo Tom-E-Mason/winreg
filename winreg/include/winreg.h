@@ -5,6 +5,7 @@
 
 #include <system_error>
 #include <string>
+#include <vector>
 
 namespace winreg
 {
@@ -182,11 +183,11 @@ namespace winreg
 
         auto get_string(const char_t* name) -> string
         {
-            DWORD size{};
+            DWORD size_bytes{};
             DWORD type{};
             constexpr DWORD type_restrictions{ RRF_RT_REG_SZ | RRF_RT_REG_EXPAND_SZ | RRF_NOEXPAND };
 
-            auto ls{ RegGetValue(m_key, nullptr, name, type_restrictions, &type, nullptr, &size) };
+            auto ls{ RegGetValue(m_key, nullptr, name, type_restrictions, &type, nullptr, &size_bytes) };
             if (ls != ERROR_SUCCESS)
             {
                 auto ec = std::error_code(ls, std::system_category());
@@ -195,11 +196,11 @@ namespace winreg
 
             string value;
 
-            if (size)
+            if (size_bytes)
             {
-                value.resize(size, null_char);
+                value.resize(size_bytes / sizeof(char_t), null_char);
 
-                ls = RegGetValue(m_key, nullptr, name, type_restrictions, &type, value.data(), &size);
+                ls = RegGetValue(m_key, nullptr, name, type_restrictions, &type, value.data(), &size_bytes);
                 if (ls != ERROR_SUCCESS)
                 {
                     auto ec = std::error_code(ls, std::system_category());
@@ -210,6 +211,73 @@ namespace winreg
             }
             
             return value;
+        }
+
+        void set_multistring(const string& name, const std::vector<string>& multistring)
+        {
+            string multistring_concat;
+            for (const auto& str : multistring)
+            {
+                multistring_concat += str;
+                multistring_concat += null_char;
+            }
+
+            multistring_concat += null_char;
+
+            set_multistring(name, multistring_concat);
+        }
+
+        void set_multistring(const string& name, const string& multistring)
+        {
+            const auto ls = RegSetValueEx(m_key,
+                                          name.c_str(),
+                                          RESERVED,
+                                          REG_MULTI_SZ,
+                                          reinterpret_cast<const BYTE*>(multistring.c_str()),
+                                          (DWORD)(multistring.length() * sizeof(char_t)));
+        }
+
+        auto get_multistring(const string& name) -> std::vector<string>
+        {
+            DWORD size_bytes{};
+            DWORD type{};
+
+            auto ls{ RegGetValue(m_key, nullptr, name.c_str(), RRF_RT_REG_MULTI_SZ, &type, nullptr, &size_bytes) };
+            if (ls != ERROR_SUCCESS)
+            {
+                auto ec = std::error_code(ls, std::system_category());
+                throw std::system_error(ec, "RegQueryValueEx() failed");
+            }
+
+            std::vector<string> multistring;
+
+            if (size_bytes)
+            {
+                string buffer(size_bytes / sizeof(char_t), null_char);
+
+                ls = RegGetValue(m_key, nullptr, name.c_str(), RRF_RT_REG_MULTI_SZ, &type, buffer.data(), &size_bytes);
+                if (ls != ERROR_SUCCESS)
+                {
+                    auto ec = std::error_code(ls, std::system_category());
+                    throw std::system_error(ec, "RegGetValue() failed");
+                }
+
+                for (std::size_t begin = 0, end = 0; end < buffer.length(); ++end)
+                {
+                    if (buffer[end] == null_char && (end - begin) > 0)
+                    {
+                        multistring.push_back(buffer.substr(begin, end - begin));
+                        begin = end + 1;
+                    }
+
+                    if (buffer[begin] == null_char)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            return multistring;
         }
 
         void set_dword(const string& name, DWORD value) const

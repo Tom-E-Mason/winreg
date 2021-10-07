@@ -35,61 +35,6 @@ TEST(winreg_test, enums_and_constants)
     EXPECT_EQ(current_config.get(), HKEY_CURRENT_CONFIG);
 }
 
-TEST(winreg_test, openclose)
-{
-    auto path = STR("software\\asio");
-    auto subkey{ winreg::local_machine.open(path, winreg::access::read) };
-
-    EXPECT_TRUE(subkey);
-    EXPECT_TRUE(subkey.is_open());
-
-    auto info = subkey.query_info();
-    EXPECT_EQ(info.class_name, winreg::string(STR("")));
-    EXPECT_EQ(info.n_subkeys, 12);
-    EXPECT_EQ(info.max_subkey_name_len, 28);
-    EXPECT_EQ(info.max_class_len, 0);
-    EXPECT_EQ(info.n_values, 0);
-    EXPECT_EQ(info.max_value_name_len, 0);
-    EXPECT_EQ(info.max_value_size, 0);
-    EXPECT_EQ(info.security_desc_size, 224);
-    EXPECT_EQ(info.last_write_time, PFILETIME{});
-
-    auto count = info.n_subkeys;
-    subkey.for_each([&count](winreg::string subkey) { --count; return true; });
-
-    EXPECT_EQ(count, 0);
-
-    subkey.close();
-
-    EXPECT_FALSE(subkey);
-    EXPECT_FALSE(subkey.is_open());
-}
-
-TEST(winreg_test, get_string)
-{
-    auto path = STR("software\\microsoft");
-    auto subkey = winreg::local_machine.open(path, winreg::access::read);
-
-    auto dotnet = subkey.open(STR(".netframework"), winreg::access::read);
-
-    auto threw = false;
-    try
-    {
-        auto not_a_string = dotnet.get_string(STR("dbgjitdebuglaunchsetting"));
-    }
-    catch (std::system_error& e)
-    {
-        if (e.code() == std::error_code(ERROR_UNSUPPORTED_TYPE, std::system_category()))
-            threw = true;
-    }
-
-    EXPECT_TRUE(threw);
-
-    auto a_string = dotnet.get_string(STR("installroot"));
-
-    EXPECT_EQ(a_string, winreg::string(STR("C:\\Windows\\Microsoft.NET\\Framework\\")));
-}
-
 TEST(winreg_test, create_write_read_delete)
 {
     // create
@@ -105,16 +50,21 @@ TEST(winreg_test, create_write_read_delete)
     new_key.set_dword(winreg::string(STR("dword-value")), 42);
     new_key.set_qword(winreg::string(STR("qword-value")), uint64_t(-1));
     new_key.set_string(winreg::string(STR("string-value")), winreg::string(STR("my-string")));
+    
+    const auto multistring = std::vector<winreg::string>{ STR("multi"), STR("word"), STR("string") };
+    new_key.set_multistring(winreg::string(STR("multistring-value")), multistring);
 
     // read
     EXPECT_EQ(new_key.get_dword(winreg::string(STR("dword-value"))), 42);
     EXPECT_EQ(new_key.get_qword(winreg::string(STR("qword-value"))), uint64_t(-1));
     EXPECT_EQ(new_key.get_string(winreg::string(STR("string-value"))), winreg::string(STR("my-string")));
+    EXPECT_EQ(new_key.get_multistring(winreg::string(STR("multistring-value"))), multistring);
 
     // delete
     new_key.delete_value(winreg::string(STR("dword-value")));
     new_key.delete_value(winreg::string(STR("qword-value")));
     new_key.delete_value(winreg::string(STR("string-value")));
+    new_key.delete_value(winreg::string(STR("multistring-value")));
 
     winreg::current_user.delete_subkey(new_key_name);
 
