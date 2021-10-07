@@ -236,6 +236,53 @@ namespace winreg
             return value;
         }
 
+        void set_qword(const string& name, uint64_t value) const
+        {
+            set_qword(name.c_str(), value);
+        }
+
+        void set_qword(const char_t* name, uint64_t value) const
+        {
+            const auto ls = RegSetValueEx(m_key,
+                                          name,
+                                          0,
+                                          REG_QWORD,
+                                          reinterpret_cast<const BYTE*>(&value),
+                                          sizeof(uint64_t));
+
+            if (ls != ERROR_SUCCESS)
+            {
+                auto ec = std::error_code(ls, std::system_category());
+                throw std::system_error(ec, "RegSetValueEx() failed");
+            }
+        }
+
+        auto get_qword(const string& name) const -> uint64_t
+        {
+            return get_qword(name.c_str());
+        }
+
+        auto get_qword(const char_t* name) const -> uint64_t
+        {
+            uint64_t value{};
+            DWORD size = sizeof(uint64_t);
+            const auto ls = RegGetValue(m_key,
+                                        nullptr,
+                                        name,
+                                        RRF_RT_REG_QWORD,
+                                        nullptr,
+                                        &value,
+                                        &size);
+
+            if (ls != ERROR_SUCCESS)
+            {
+                auto ec = std::error_code(ls, std::system_category());
+                throw std::system_error(ec, "RegGetValue() failed");
+            }
+
+            return value;
+        }
+
         void delete_value(const string& name) const
         {
             delete_value(name.c_str());

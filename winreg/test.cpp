@@ -103,12 +103,15 @@ TEST(winreg_test, create_write_read_delete)
 
     // write
     new_key.set_dword(winreg::string(STR("dword-value")), 42);
+    new_key.set_qword(winreg::string(STR("qword-value")), uint64_t(-1));
 
     // read
     EXPECT_EQ(new_key.get_dword(winreg::string(STR("dword-value"))), 42);
+    EXPECT_EQ(new_key.get_qword(winreg::string(STR("qword-value"))), uint64_t(-1));
 
     // delete
     new_key.delete_value(winreg::string(STR("dword-value")));
+    new_key.delete_value(winreg::string(STR("qword-value")));
 
     winreg::current_user.delete_subkey(new_key_name);
 
