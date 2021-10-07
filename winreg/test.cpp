@@ -44,20 +44,20 @@ TEST(winreg_test, openclose)
     EXPECT_TRUE(subkey.is_open());
 
     auto info = subkey.query_info();
-    EXPECT_TRUE(info.class_name == winreg::string(STR("")));
-    EXPECT_TRUE(info.n_subkeys == 12);
-    EXPECT_TRUE(info.max_subkey_name_len == 28);
-    EXPECT_TRUE(info.max_class_len == 0);
-    EXPECT_TRUE(info.n_values == 0);
-    EXPECT_TRUE(info.max_value_name_len == 0);
-    EXPECT_TRUE(info.max_value_size == 0);
-    EXPECT_TRUE(info.security_desc_size == 224);
-    EXPECT_TRUE(info.last_write_time == 0);
+    EXPECT_EQ(info.class_name, winreg::string(STR("")));
+    EXPECT_EQ(info.n_subkeys, 12);
+    EXPECT_EQ(info.max_subkey_name_len, 28);
+    EXPECT_EQ(info.max_class_len, 0);
+    EXPECT_EQ(info.n_values, 0);
+    EXPECT_EQ(info.max_value_name_len, 0);
+    EXPECT_EQ(info.max_value_size, 0);
+    EXPECT_EQ(info.security_desc_size, 224);
+    EXPECT_EQ(info.last_write_time, PFILETIME{});
 
     auto count = info.n_subkeys;
     subkey.for_each([&count](winreg::string subkey) { --count; return true; });
 
-    EXPECT_TRUE(count == 0);
+    EXPECT_EQ(count, 0);
 
     subkey.close();
 
@@ -87,7 +87,7 @@ TEST(winreg_test, get_string)
 
     auto a_string = dotnet.get_string(STR("installroot"));
 
-    EXPECT_TRUE(a_string == winreg::string(STR("C:\\Windows\\Microsoft.NET\\Framework\\")));
+    EXPECT_EQ(a_string, winreg::string(STR("C:\\Windows\\Microsoft.NET\\Framework\\")));
 }
 
 TEST(winreg_test, create_write_read_delete)
@@ -98,7 +98,7 @@ TEST(winreg_test, create_write_read_delete)
     auto new_key = winreg::current_user.create_subkey(new_key_name);
 
     auto new_key_copy = winreg::current_user.open(new_key_name);
-    
+
     EXPECT_EQ(new_key, new_key_copy);
 
     // write
