@@ -18,6 +18,8 @@ namespace winreg
     constexpr char_t null_char{ '\0' };
 #endif
 
+    static constexpr DWORD RESERVED = 0;
+
     enum class access : REGSAM
     {
         all_access = KEY_ALL_ACCESS,
@@ -152,6 +154,27 @@ namespace winreg
             return key_info;
         }
 
+        void set_string(const string& name, const string& value)
+        {
+            set_string(name.c_str(), value.c_str());
+        }
+
+        void set_string(const char_t* name, const string& value)
+        {
+            const auto ls = RegSetValueEx(m_key,
+                                          name,
+                                          RESERVED,
+                                          REG_SZ,
+                                          reinterpret_cast<const BYTE*>(value.c_str()),
+                                          (DWORD)(value.length() + 1) * sizeof(char_t));
+
+            if (ls != ERROR_SUCCESS)
+            {
+                auto ec = std::error_code(ls, std::system_category());
+                throw std::system_error(ec, "RegSetValueEx() failed");
+            }
+        }
+
         auto get_string(const string& name) -> string
         {
             return get_string(name.c_str());
@@ -174,7 +197,7 @@ namespace winreg
 
             if (size)
             {
-                value.resize(size / sizeof(char_t), null_char);
+                value.resize(size, null_char);
 
                 ls = RegGetValue(m_key, nullptr, name, type_restrictions, &type, value.data(), &size);
                 if (ls != ERROR_SUCCESS)
@@ -198,7 +221,7 @@ namespace winreg
         {
             const auto ls = RegSetValueEx(m_key,
                                           name,
-                                          0,
+                                          RESERVED,
                                           REG_DWORD,
                                           reinterpret_cast<const BYTE*>(&value),
                                           sizeof(DWORD));
@@ -245,7 +268,7 @@ namespace winreg
         {
             const auto ls = RegSetValueEx(m_key,
                                           name,
-                                          0,
+                                          RESERVED,
                                           REG_QWORD,
                                           reinterpret_cast<const BYTE*>(&value),
                                           sizeof(uint64_t));
