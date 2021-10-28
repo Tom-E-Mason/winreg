@@ -262,17 +262,16 @@ namespace winreg
                     throw std::system_error(ec, "RegGetValue() failed");
                 }
 
-                for (std::size_t begin = 0, end = 0; end < buffer.length(); ++end)
+                for (std::size_t offset = 0, count = 0;
+                     buffer[offset] != null_char && offset + count < buffer.length();
+                     ++count)
                 {
-                    if (buffer[end] == null_char && (end - begin) > 0)
+                    if (buffer[offset + count] == null_char)
                     {
-                        multistring.push_back(buffer.substr(begin, end - begin));
-                        begin = end + 1;
-                    }
+                        multistring.push_back(buffer.substr(offset, count));
 
-                    if (buffer[begin] == null_char)
-                    {
-                        break;
+                        offset += (count + 1);
+                        count = 0;
                     }
                 }
             }

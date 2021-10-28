@@ -51,7 +51,7 @@ TEST(winreg_test, create_write_read_delete)
     new_key.set_qword(winreg::string(STR("qword-value")), uint64_t(-1));
     new_key.set_string(winreg::string(STR("string-value")), winreg::string(STR("my-string")));
     
-    const auto multistring = std::vector<winreg::string>{ STR("multi"), STR("word"), STR("string") };
+    const auto multistring = std::vector<winreg::string>{ STR("a"), STR("multi"), STR("string") };
     new_key.set_multistring(winreg::string(STR("multistring-value")), multistring);
 
     // read
