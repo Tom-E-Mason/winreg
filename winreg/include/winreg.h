@@ -13,10 +13,12 @@ namespace winreg
     using string = std::wstring;
     using char_t = wchar_t;
     constexpr char_t null_char{ L'\0' };
+#define STR(str) string(L ## str ## )
 #else
     using string = std::string;
     using char_t = char;
     constexpr char_t null_char{ '\0' };
+#define STR(str) string( ## str ## )
 #endif
 
     static constexpr DWORD RESERVED = 0;
@@ -40,7 +42,10 @@ namespace winreg
     class key
     {
     public:
-        explicit key(HKEY hkey) : m_key(hkey) {}
+        explicit key(HKEY hkey, const string& name)
+            : m_key(hkey), m_name(name)
+        {
+        }
 
         key(const key&) = delete;
         key(key&& rhs) noexcept : m_key(rhs.m_key) { rhs.m_key = nullptr; }
@@ -61,7 +66,7 @@ namespace winreg
                 throw std::system_error(ec, "RegCreateKey() failed");
             }
 
-            return key(new_key);
+            return key(new_key, subkey);
         }
 
         void delete_subkey(const string& subkey) const
@@ -86,7 +91,7 @@ namespace winreg
                 throw std::system_error(ec, "RegOpenKeyEx() failed");
             }
 
-            return key(result);
+            return key(result, subkey);
         }
 
         void close()
@@ -446,13 +451,30 @@ namespace winreg
         auto is_open() const noexcept -> bool { return m_key; }
         operator bool() const noexcept { return m_key; }
 
+        const string& name() const { return m_name; }
+
     private:
         HKEY m_key;
+        string m_name;
     };
 
-    extern const key classes_root(HKEY_CLASSES_ROOT);
-    extern const key current_user(HKEY_CURRENT_USER);
-    extern const key local_machine(HKEY_LOCAL_MACHINE);
-    extern const key users(HKEY_USERS);
-    extern const key current_config(HKEY_CURRENT_CONFIG);
+    extern const key classes_root(HKEY_CLASSES_ROOT, STR("HKEY_CLASSES_ROOT"));
+    extern const key current_user(HKEY_CURRENT_USER, STR("HKEY_CURRENT_USER"));
+    extern const key local_machine(HKEY_LOCAL_MACHINE, STR("HKEY_LOCAL_MACHINE"));
+    extern const key users(HKEY_USERS, STR("HKEY_USERS"));
+    extern const key current_config(HKEY_CURRENT_CONFIG, STR("HKEY_CURRENT_CONFIG"));
+
+    //class transaction
+    //{
+    //public:
+    //    explicit transaction(key original_key) : m_original_key(original_key)
+    //    {
+    //
+    //    }
+    //private:
+    //    key m_original_key;
+    //    key m_transaction_key;
+    //};
 }
+
+#undef STR

@@ -11,7 +11,30 @@ using namespace std::string_literals;
 #define STR(str) str ## s
 #endif
 
-TEST(winreg_test, enums_and_constants)
+class winreg_test : public ::testing::Test
+{
+protected:
+    winreg_test()
+        : m_key(winreg::current_user.create_subkey(STR("winreg-test-key")))
+    {
+    }
+
+    ~winreg_test()
+    {
+        m_key.for_each([this](const winreg::char_t* key_name)
+            {
+                m_key.delete_subkey(key_name);
+
+                return true;
+            });
+
+        winreg::current_user.delete_subkey(STR("winreg-test-key"));
+    }
+
+    winreg::key m_key;
+};
+
+TEST_F(winreg_test, enums_and_constants)
 {
     using namespace winreg;
 
@@ -35,43 +58,39 @@ TEST(winreg_test, enums_and_constants)
     EXPECT_EQ(current_config.get(), HKEY_CURRENT_CONFIG);
 }
 
-TEST(winreg_test, create_write_read_delete)
+TEST_F(winreg_test, create_write_read_delete)
 {
     // create
-    const auto new_key_name = winreg::string(STR("long_and_unique_name_for_new_key"));
+    auto key_copy = winreg::current_user.open(m_key.name());
 
-    auto new_key = winreg::current_user.create_subkey(new_key_name);
-
-    auto new_key_copy = winreg::current_user.open(new_key_name);
-
-    EXPECT_EQ(new_key, new_key_copy);
+    EXPECT_EQ(m_key, key_copy);
 
     // write
-    new_key.set_dword(winreg::string(STR("dword-value")), 42);
-    new_key.set_qword(winreg::string(STR("qword-value")), uint64_t(-1));
-    new_key.set_string(winreg::string(STR("string-value")), winreg::string(STR("my-string")));
+    m_key.set_dword(winreg::string(STR("dword-value")), 42);
+    m_key.set_qword(winreg::string(STR("qword-value")), uint64_t(-1));
+    m_key.set_string(winreg::string(STR("string-value")), winreg::string(STR("my-string")));
     
     const auto multistring = std::vector<winreg::string>{ STR("a"), STR("multi"), STR("string") };
-    new_key.set_multistring(winreg::string(STR("multistring-value")), multistring);
+    m_key.set_multistring(winreg::string(STR("multistring-value")), multistring);
 
     // read
-    EXPECT_EQ(new_key.get_dword(winreg::string(STR("dword-value"))), 42);
-    EXPECT_EQ(new_key.get_qword(winreg::string(STR("qword-value"))), uint64_t(-1));
-    EXPECT_EQ(new_key.get_string(winreg::string(STR("string-value"))), winreg::string(STR("my-string")));
-    EXPECT_EQ(new_key.get_multistring(winreg::string(STR("multistring-value"))), multistring);
+    EXPECT_EQ(m_key.get_dword(winreg::string(STR("dword-value"))), 42);
+    EXPECT_EQ(m_key.get_qword(winreg::string(STR("qword-value"))), uint64_t(-1));
+    EXPECT_EQ(m_key.get_string(winreg::string(STR("string-value"))), winreg::string(STR("my-string")));
+    EXPECT_EQ(m_key.get_multistring(winreg::string(STR("multistring-value"))), multistring);
 
     // delete
-    new_key.delete_value(winreg::string(STR("dword-value")));
-    new_key.delete_value(winreg::string(STR("qword-value")));
-    new_key.delete_value(winreg::string(STR("string-value")));
-    new_key.delete_value(winreg::string(STR("multistring-value")));
+    m_key.delete_value(winreg::string(STR("dword-value")));
+    m_key.delete_value(winreg::string(STR("qword-value")));
+    m_key.delete_value(winreg::string(STR("string-value")));
+    m_key.delete_value(winreg::string(STR("multistring-value")));
 
-    winreg::current_user.delete_subkey(new_key_name);
+    winreg::current_user.delete_subkey(m_key.name());
 
     bool threw = false;
     try
     {
-        auto nonexistent_key = winreg::current_user.open(new_key_name);
+        auto nonexistent_key = winreg::current_user.open(m_key.name());
     }
     catch (std::system_error& e)
     {
@@ -81,3 +100,19 @@ TEST(winreg_test, create_write_read_delete)
 
     EXPECT_TRUE(threw);
 }
+
+//TEST(winreg_test, transaction)
+//{
+//    const auto new_key_name = winreg::string(STR("transaction_test"));
+//
+//    const auto new_key = winreg::local_machine.create_subkey(new_key_name);
+//
+//    new_key.set_dword(STR("dword-value"), 42);
+//
+//    auto transaction = winreg::transaction(new_key);
+//
+//    EXPECT_EQ(transaction.get_dword(STR("dword-value")), 42);
+//
+//    winreg::current_user.delete_subkey(new_key_name);
+//
+//}
