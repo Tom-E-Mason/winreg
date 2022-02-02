@@ -101,18 +101,8 @@ TEST_F(winreg_test, create_write_read_delete)
     EXPECT_TRUE(threw);
 }
 
-//TEST(winreg_test, transaction)
-//{
-//    const auto new_key_name = winreg::string(STR("transaction_test"));
-//
-//    const auto new_key = winreg::local_machine.create_subkey(new_key_name);
-//
-//    new_key.set_dword(STR("dword-value"), 42);
-//
-//    auto transaction = winreg::transaction(new_key);
-//
-//    EXPECT_EQ(transaction.get_dword(STR("dword-value")), 42);
-//
-//    winreg::current_user.delete_subkey(new_key_name);
-//
-//}
+TEST(winreg_test, transaction)
+{
+    
+
+}

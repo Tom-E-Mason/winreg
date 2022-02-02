@@ -2,6 +2,7 @@
 #pragma once
 
 #include <Windows.h>
+#include <ktmw32.h>
 
 #include <system_error>
 #include <string>
@@ -464,17 +465,35 @@ namespace winreg
     extern const key users(HKEY_USERS, STR("HKEY_USERS"));
     extern const key current_config(HKEY_CURRENT_CONFIG, STR("HKEY_CURRENT_CONFIG"));
 
-    //class transaction
-    //{
-    //public:
-    //    explicit transaction(key original_key) : m_original_key(original_key)
-    //    {
-    //
-    //    }
-    //private:
-    //    key m_original_key;
-    //    key m_transaction_key;
-    //};
+    class transaction
+    {
+    public:
+        transaction(DWORD timeout = INFINITE)
+            : m_uncaught_exceptions(std::uncaught_exceptions())
+        {
+            m_handle = CreateTransaction(nullptr,                    // security attributes
+                                         nullptr,                    // reserved
+                                         TRANSACTION_DO_NOT_PROMOTE, // transaction can't be distributed
+                                         NULL,                       // reserved
+                                         NULL,                       // reserved
+                                         timeout,                    // milliseconds
+                                         nullptr);                   // description
+        }
+
+        ~transaction()
+        {
+            if (m_uncaught_exceptions == std::uncaught_exceptions())
+            {
+                auto CommitTransaction(m_handle);
+            }
+            
+            CloseHandle(m_handle);
+        }
+
+    private:
+        HANDLE m_handle;
+        int m_uncaught_exceptions;
+    };
 }
 
 #undef STR
